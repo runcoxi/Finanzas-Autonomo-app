@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../database/database_helper.dart';
+import '../models/client.dart';
 import '../models/invoice.dart';
 import '../providers/invoice_provider.dart';
 import '../utils/formatters.dart';
@@ -24,6 +26,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
   DateTime _date = DateTime.now();
   DateTime? _dueDate;
   List<_ItemFormData> _items = [];
+  List<Client> _clients = [];
 
   bool get _isEditing => widget.invoice != null;
 
@@ -33,6 +36,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
   @override
   void initState() {
     super.initState();
+    _loadClients();
     if (_isEditing) {
       final inv = widget.invoice!;
       _numberCtrl.text = inv.number;
@@ -60,6 +64,11 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
   Future<void> _loadNextNumber() async {
     final number = await context.read<InvoiceProvider>().nextInvoiceNumber();
     if (mounted) setState(() => _numberCtrl.text = number);
+  }
+
+  Future<void> _loadClients() async {
+    final clients = await DatabaseHelper().getClients();
+    if (mounted) setState(() => _clients = clients);
   }
 
   @override
@@ -133,6 +142,12 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
       await provider.addInvoice(invoice);
     }
 
+    await DatabaseHelper().upsertClient(Client(
+      name: invoice.clientName,
+      nif: invoice.clientNif,
+      address: invoice.clientAddress,
+    ));
+
     if (mounted) Navigator.pop(context);
   }
 
@@ -205,12 +220,33 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
 
             // Cliente
             _SectionHeader(title: 'Datos del cliente'),
-            TextFormField(
-              controller: _clientNameCtrl,
-              decoration: const InputDecoration(labelText: 'Nombre / Razón social'),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
-              textCapitalization: TextCapitalization.words,
+            Autocomplete<Client>(
+              initialValue: TextEditingValue(text: _clientNameCtrl.text),
+              optionsBuilder: (value) {
+                if (value.text.trim().isEmpty) return const Iterable<Client>.empty();
+                final q = value.text.toLowerCase();
+                return _clients.where((c) => c.name.toLowerCase().contains(q));
+              },
+              displayStringForOption: (c) => c.name,
+              onSelected: (c) {
+                _clientNameCtrl.text = c.name;
+                _clientNifCtrl.text = c.nif;
+                _clientAddressCtrl.text = c.address;
+              },
+              fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                return TextFormField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre / Razón social',
+                    helperText: 'Empieza a escribir para ver clientes guardados',
+                  ),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
+                  textCapitalization: TextCapitalization.words,
+                  onChanged: (v) => _clientNameCtrl.text = v,
+                );
+              },
             ),
             const SizedBox(height: 12),
             TextFormField(

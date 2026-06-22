@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/transaction.dart';
 import '../models/invoice.dart';
 import '../models/category.dart';
+import '../models/client.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -21,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'finanzas_autonomo.db');
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => db.execute('PRAGMA foreign_keys = ON'),
@@ -31,6 +32,16 @@ class DatabaseHelper {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE transactions ADD COLUMN image BLOB');
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS clients (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          nif TEXT,
+          address TEXT
+        )
+      ''');
     }
   }
 
@@ -57,6 +68,15 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         notes TEXT,
         image BLOB
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE clients (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        nif TEXT,
+        address TEXT
       )
     ''');
 
@@ -126,6 +146,27 @@ class DatabaseHelper {
         ? await db.query('categories', where: 'type = ?', whereArgs: [type])
         : await db.query('categories', orderBy: 'name ASC');
     return rows.map(Category.fromMap).toList();
+  }
+
+  // ── Clients ───────────────────────────────────────────────────────────────
+
+  Future<List<Client>> getClients() async {
+    final db = await database;
+    final rows = await db.query('clients', orderBy: 'name ASC');
+    return rows.map(Client.fromMap).toList();
+  }
+
+  Future<void> upsertClient(Client c) async {
+    if (c.name.trim().isEmpty) return;
+    final db = await database;
+    final existing = await db.query('clients',
+        where: 'name = ?', whereArgs: [c.name], limit: 1);
+    if (existing.isEmpty) {
+      await db.insert('clients', c.toMap()..remove('id'));
+    } else {
+      await db.update('clients', {'nif': c.nif, 'address': c.address},
+          where: 'name = ?', whereArgs: [c.name]);
+    }
   }
 
   // ── Transactions ──────────────────────────────────────────────────────────
