@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class FinancialTransaction {
   final int? id;
   final String title;
@@ -8,6 +10,7 @@ class FinancialTransaction {
   final double irpfRate;
   final DateTime date;
   final String? notes;
+  final Uint8List? image;
 
   const FinancialTransaction({
     this.id,
@@ -19,6 +22,7 @@ class FinancialTransaction {
     this.irpfRate = 0,
     required this.date,
     this.notes,
+    this.image,
   });
 
   bool get isIncome => type == 'income';
@@ -37,6 +41,7 @@ class FinancialTransaction {
         'irpf_rate': irpfRate,
         'date': date.toIso8601String(),
         'notes': notes,
+        'image': image,
       };
 
   factory FinancialTransaction.fromMap(Map<String, dynamic> map) =>
@@ -50,6 +55,7 @@ class FinancialTransaction {
         irpfRate: (map['irpf_rate'] as num).toDouble(),
         date: DateTime.parse(map['date'] as String),
         notes: map['notes'] as String?,
+        image: map['image'] as Uint8List?,
       );
 
   FinancialTransaction copyWith({
@@ -62,6 +68,7 @@ class FinancialTransaction {
     double? irpfRate,
     DateTime? date,
     String? notes,
+    Uint8List? image,
   }) =>
       FinancialTransaction(
         id: id ?? this.id,
@@ -73,5 +80,6 @@ class FinancialTransaction {
         irpfRate: irpfRate ?? this.irpfRate,
         date: date ?? this.date,
         notes: notes ?? this.notes,
+        image: image ?? this.image,
       );
 }

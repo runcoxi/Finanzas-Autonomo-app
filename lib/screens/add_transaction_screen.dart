@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../database/database_helper.dart';
@@ -28,6 +29,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   double _irpfRate = 0;
   DateTime _date = DateTime.now();
   List<Category> _categories = [];
+  Uint8List? _image;
 
   bool get _isEditing => widget.transaction != null;
 
@@ -47,6 +49,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _vatRate = t.vatRate;
       _irpfRate = t.irpfRate;
       _date = t.date;
+      _image = t.image;
     }
     _loadCategories();
   }
@@ -104,6 +107,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ];
       if (parts.isNotEmpty) _notesCtrl.text = parts.join(' · ');
 
+      if (result.image != null) _image = result.image;
+
       // Scanning a receipt implies an expense
       if (!_isEditing) {
         _type = 'expense';
@@ -145,6 +150,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       irpfRate: _irpfRate,
       date: _date,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      image: _image,
     );
 
     if (_isEditing) {
@@ -220,7 +226,39 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            if (_image != null) ...[
+              GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => Dialog(
+                    child: InteractiveViewer(child: Image.memory(_image!)),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    children: [
+                      Image.memory(_image!,
+                          height: 140, width: double.infinity, fit: BoxFit.cover),
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                            tooltip: 'Quitar foto',
+                            onPressed: () => setState(() => _image = null),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
             // Concepto
             TextFormField(

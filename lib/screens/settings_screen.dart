@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/settings.dart';
 import '../providers/settings_provider.dart';
+import '../utils/formatters.dart';
+import '../utils/photo_exporter.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,6 +21,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _emailCtrl;
   late final TextEditingController _geminiKeyCtrl;
   bool _showApiKey = false;
+  DateTime _exportMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  bool _exporting = false;
 
   @override
   void initState() {
@@ -58,6 +62,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SnackBar(content: Text('Datos guardados correctamente')),
       );
       Navigator.pop(context);
+    }
+  }
+
+  Future<void> _changeExportMonth(int delta) async {
+    setState(() {
+      _exportMonth = DateTime(_exportMonth.year, _exportMonth.month + delta);
+    });
+  }
+
+  Future<void> _exportPhotos() async {
+    setState(() => _exporting = true);
+    try {
+      final count = await PhotoExporter.exportMonth(_exportMonth);
+      if (!mounted) return;
+      if (count == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('No hay fotos de tickets guardadas ese mes')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al exportar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
     }
   }
 
@@ -161,6 +193,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: () =>
                       setState(() => _showApiKey = !_showApiKey),
                 ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.photo_library, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Text('Exportar fotos de tickets',
+                    style: Theme.of(context).textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Descarga en un .zip todas las fotos de tickets guardadas en un mes, '
+              'para no acumular espacio en el teléfono.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => _changeExportMonth(-1),
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Text(
+                    capitalizeFirst(formatMonthYear(_exportMonth)),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _changeExportMonth(1),
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _exporting ? null : _exportPhotos,
+              icon: _exporting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.download),
+              label: Text(_exporting ? 'Preparando...' : 'Descargar .zip del mes'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
               ),
             ),
             const SizedBox(height: 24),

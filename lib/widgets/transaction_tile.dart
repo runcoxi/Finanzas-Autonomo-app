@@ -59,9 +59,20 @@ class TransactionTile extends StatelessWidget {
           ),
           title: Text(transaction.title,
               style: const TextStyle(fontWeight: FontWeight.w500)),
-          subtitle: Text(
-            '${transaction.category} · ${formatDate(transaction.date)}',
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          subtitle: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  '${transaction.category} · ${formatDate(transaction.date)}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (transaction.image != null) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.photo_camera, size: 13, color: Colors.grey[500]),
+              ],
+            ],
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,

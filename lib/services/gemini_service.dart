@@ -11,6 +11,7 @@ class ExtractedTicketData {
   final String? numeroFactura;
   final DateTime? fecha;
   final String? notas;
+  final Uint8List? image;
 
   const ExtractedTicketData({
     this.concepto,
@@ -21,6 +22,7 @@ class ExtractedTicketData {
     this.numeroFactura,
     this.fecha,
     this.notas,
+    this.image,
   });
 }
 

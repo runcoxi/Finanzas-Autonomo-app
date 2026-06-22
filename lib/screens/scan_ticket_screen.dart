@@ -1,6 +1,6 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +82,8 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
     );
     if (xFile == null) return;
 
-    final bytes = await xFile.readAsBytes();
+    final rawBytes = await xFile.readAsBytes();
+    final bytes = _compressForStorage(rawBytes);
 
     setState(() {
       _imageBytes = bytes;
@@ -116,6 +117,14 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
         .reduce((a, b) => (a - value).abs() < (b - value).abs() ? a : b);
   }
 
+  static Uint8List _compressForStorage(Uint8List bytes) {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return bytes;
+    final resized =
+        decoded.width > 800 ? img.copyResize(decoded, width: 800) : decoded;
+    return Uint8List.fromList(img.encodeJpg(resized, quality: 60));
+  }
+
   void _confirm() {
     final amount =
         double.tryParse(_importeCtrl.text.replaceAll(',', '.'));
@@ -143,6 +152,7 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
         fecha: _fecha,
         notas:
             _notasCtrl.text.trim().isEmpty ? null : _notasCtrl.text.trim(),
+        image: _imageBytes,
       ),
     );
   }
