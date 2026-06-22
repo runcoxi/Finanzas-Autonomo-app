@@ -34,7 +34,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool get _isEditing => widget.transaction != null;
 
   static const _vatRates = [0.0, 4.0, 10.0, 21.0];
-  static const _irpfRates = [0.0, 7.0, 15.0, 19.0, 21.0];
+  static const _irpfRates = [0.0, 1.0, 7.0, 15.0, 19.0, 21.0];
 
   @override
   void initState() {
@@ -118,6 +118,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
 
     if (!_isEditing) _loadCategories();
+
+    if (result.image != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('Foto guardada con este movimiento'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   Future<void> _pickDate() async {

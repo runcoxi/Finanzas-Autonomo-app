@@ -42,7 +42,7 @@ class GeminiService {
       'Reglas:\n'
       '- importe_base: base imponible sin IVA. Si ves solo el total, calcula la base.\n'
       '- iva_porcentaje: solo puede ser 0, 4, 10 o 21. Elige el valor más cercano.\n'
-      '- irpf_porcentaje: solo puede ser 0, 7, 15, 19 o 21. Si no hay retención, usa 0.\n'
+      '- irpf_porcentaje: solo puede ser 0, 1, 7, 15, 19 o 21. Si no hay retención, usa 0.\n'
       '- fecha: formato YYYY-MM-DD. null si no aparece.\n'
       '- Usa null para campos que no puedas determinar con certeza.';
 

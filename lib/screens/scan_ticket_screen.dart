@@ -37,7 +37,7 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
   double _irpfRate = 0;
 
   static const _vatRates = [0.0, 4.0, 10.0, 21.0];
-  static const _irpfRates = [0.0, 7.0, 15.0, 19.0, 21.0];
+  static const _irpfRates = [0.0, 1.0, 7.0, 15.0, 19.0, 21.0];
 
   @override
   void dispose() {
