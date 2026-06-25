@@ -25,6 +25,7 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
   Uint8List? _imageBytes;
   String? _imageName;
   String? _errorMsg;
+  String _statusMsg = 'Analizando con IA…';
 
   final _conceptoCtrl = TextEditingController();
   final _importeCtrl = TextEditingController();
@@ -89,11 +90,16 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
       _imageBytes = bytes;
       _imageName = xFile.name;
       _phase = _Phase.analyzing;
+      _statusMsg = 'Analizando con IA…';
     });
 
     try {
-      final data =
-          await _gemini.extractFromImage(_imageBytes!, _imageName!, apiKey);
+      final data = await _gemini.extractFromImage(
+        _imageBytes!, _imageName!, apiKey,
+        onStatus: (msg) {
+          if (mounted) setState(() => _statusMsg = msg);
+        },
+      );
       _conceptoCtrl.text = data.concepto ?? '';
       _importeCtrl.text =
           data.importeBase != null ? data.importeBase!.toStringAsFixed(2) : '';
@@ -203,7 +209,8 @@ class _ScanTicketScreenState extends State<ScanTicketScreen> {
       ),
       body: switch (_phase) {
         _Phase.select => _SelectPhase(onPick: _pickImage),
-        _Phase.analyzing => _AnalyzingPhase(image: _imageBytes!),
+        _Phase.analyzing =>
+          _AnalyzingPhase(image: _imageBytes!, statusMsg: _statusMsg),
         _Phase.results => _ResultsPhase(
             image: _imageBytes!,
             conceptoCtrl: _conceptoCtrl,
@@ -285,7 +292,8 @@ class _SelectPhase extends StatelessWidget {
 
 class _AnalyzingPhase extends StatelessWidget {
   final Uint8List image;
-  const _AnalyzingPhase({required this.image});
+  final String statusMsg;
+  const _AnalyzingPhase({required this.image, required this.statusMsg});
 
   @override
   Widget build(BuildContext context) {
@@ -294,15 +302,15 @@ class _AnalyzingPhase extends StatelessWidget {
         Expanded(
           child: Image.memory(image, fit: BoxFit.contain),
         ),
-        const Padding(
-          padding: EdgeInsets.all(32),
+        Padding(
+          padding: const EdgeInsets.all(32),
           child: Column(
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Analizando con IA...', style: TextStyle(fontSize: 16)),
-              SizedBox(height: 4),
-              Text(
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(statusMsg, style: const TextStyle(fontSize: 16)),
+              const SizedBox(height: 4),
+              const Text(
                 'Esto puede tardar unos segundos',
                 style: TextStyle(color: Colors.grey),
               ),
@@ -472,23 +480,33 @@ class _ErrorPhase extends StatelessWidget {
   final VoidCallback onRetry;
   const _ErrorPhase({required this.message, required this.onRetry});
 
+  static bool _isQuotaError(String msg) =>
+      msg.contains('429') || msg.contains('quota') || msg.contains('RESOURCE_EXHAUSTED');
+
   @override
   Widget build(BuildContext context) {
+    final isQuota = _isQuotaError(message);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(isQuota ? Icons.hourglass_empty : Icons.error_outline,
+                size: 64, color: isQuota ? Colors.orange : Colors.red),
             const SizedBox(height: 16),
-            Text('Error al analizar',
+            Text(isQuota ? 'Límite de API alcanzado' : 'Error al analizar',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              message,
+              isQuota
+                  ? 'Has alcanzado el límite gratuito de Gemini.\n\n'
+                    '• Espera 1 minuto y vuelve a intentarlo.\n'
+                    '• Si sigue fallando, la cuota diaria se restablece a medianoche (hora del Pacífico).\n'
+                    '• Las claves del mismo Google account comparten cuota.'
+                  : message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: isQuota ? Colors.orange[800] : Colors.grey),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
