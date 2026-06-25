@@ -28,9 +28,8 @@ class ExtractedTicketData {
 
 class GeminiService {
   static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
-  // Prompt in Spanish asking for strict JSON output
   static const _prompt =
       'Analiza este ticket o factura y extrae los datos fiscales. '
       'Responde ÚNICAMENTE con un objeto JSON válido, sin texto extra ni bloques markdown.\n\n'
@@ -49,11 +48,39 @@ class GeminiService {
   Future<ExtractedTicketData> extractFromImage(
     Uint8List bytes,
     String fileName,
-    String apiKey,
-  ) async {
-    final base64Image = base64Encode(bytes);
+    String apiKey, {
+    void Function(String)? onStatus,
+  }) async {
+    const maxAttempts = 3;
 
-    final response = await http
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      final response = await _post(bytes, fileName, apiKey);
+
+      if (response.statusCode == 200) {
+        return _parse(response.body);
+      }
+
+      final isRetryable =
+          response.statusCode == 429 || response.statusCode == 503;
+      if (!isRetryable || attempt == maxAttempts - 1) {
+        throw Exception(_errorMessage(response));
+      }
+
+      final delaySecs = response.statusCode == 429
+          ? _parseRetryDelay(response.body)
+          : 6;
+      onStatus?.call('Servidor ocupado. Reintentando en ${delaySecs}s…');
+      await Future.delayed(Duration(seconds: delaySecs));
+      onStatus?.call('Analizando con IA…');
+    }
+
+    throw Exception('Error inesperado');
+  }
+
+  Future<http.Response> _post(
+      Uint8List bytes, String fileName, String apiKey) {
+    final base64Image = base64Encode(bytes);
+    return http
         .post(
           Uri.parse('$_endpoint?key=$apiKey'),
           headers: {'Content-Type': 'application/json'},
@@ -78,26 +105,14 @@ class GeminiService {
           }),
         )
         .timeout(const Duration(seconds: 45));
+  }
 
-    if (response.statusCode != 200) {
-      // Throw the raw API response so the UI can show exactly what failed
-      String raw;
-      try {
-        final err = jsonDecode(response.body) as Map<String, dynamic>;
-        final msg = (err['error'] as Map?)?['message'] as String?;
-        raw = 'HTTP ${response.statusCode}: ${msg ?? response.body}';
-      } catch (_) {
-        raw = 'HTTP ${response.statusCode}: ${response.body}';
-      }
-      throw Exception(raw);
-    }
-
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+  ExtractedTicketData _parse(String responseBody) {
+    final body = jsonDecode(responseBody) as Map<String, dynamic>;
     final parts =
         ((body['candidates'] as List).first)['content']['parts'] as List;
     final text = parts.first['text'] as String;
 
-    // Strip markdown code fences if the model wrapped the JSON
     final cleaned = text
         .replaceAll(RegExp(r'```json\s*'), '')
         .replaceAll(RegExp(r'```\s*'), '')
@@ -114,6 +129,28 @@ class GeminiService {
       fecha: _toDate(data['fecha'] as String?),
       notas: data['notas'] as String?,
     );
+  }
+
+  static String _errorMessage(http.Response response) {
+    try {
+      final err = jsonDecode(response.body) as Map<String, dynamic>;
+      final msg = (err['error'] as Map?)?['message'] as String?;
+      return 'HTTP ${response.statusCode}: ${msg ?? response.body}';
+    } catch (_) {
+      return 'HTTP ${response.statusCode}: ${response.body}';
+    }
+  }
+
+  // Extracts the retry delay in seconds from a 429 response body.
+  // The API returns: "Please retry in 4.02630138s."
+  static int _parseRetryDelay(String body) {
+    try {
+      final match = RegExp(r'retry in (\d+(?:\.\d+)?)s').firstMatch(body);
+      if (match != null) {
+        return (double.parse(match.group(1)!) + 1).ceil();
+      }
+    } catch (_) {}
+    return 65;
   }
 
   static double? _toDouble(dynamic v) {
