@@ -52335,7 +52335,7 @@ A.afr.prototype={
 zj(a,b,c,d){return this.aAa(a,b,c,d)},
 aAa(a3,a4,a5,a6){var s=0,r=A.z(t.gd),q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2
 var $async$zj=A.A(function(a7,a8){if(a7===1)return A.w(a8,r)
-while(true)switch(s){case 0:p=t.z,o=t.N,n=t.GU,m=t.Mq,l=t.JD,k=t.lU,j=t.Ci,i=t.K,h="https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key="+a5,g=0
+while(true)switch(s){case 0:p=t.z,o=t.N,n=t.GU,m=t.Mq,l=t.JD,k=t.lU,j=t.Ci,i=t.K,h="https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key="+a5,g=0
 case 3:if(!(g<3)){s=5
 break}f=B.vR.gNU().ea(a3)
 e=A.j9(h,0,null)

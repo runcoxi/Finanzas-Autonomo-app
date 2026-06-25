@@ -28,7 +28,7 @@ class ExtractedTicketData {
 
 class GeminiService {
   static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent';
 
   static const _prompt =
       'Analiza este ticket o factura y extrae los datos fiscales. '
