@@ -4,6 +4,8 @@ class AppSettings {
   final String ownerAddress;
   final String ownerPhone;
   final String ownerEmail;
+  final String ownerBank;
+  final String ownerIban;
   final String geminiApiKey;
 
   const AppSettings({
@@ -12,6 +14,8 @@ class AppSettings {
     this.ownerAddress = '',
     this.ownerPhone = '',
     this.ownerEmail = '',
+    this.ownerBank = 'BBVA',
+    this.ownerIban = 'ES76 0182 5297 2302 0172 1273',
     this.geminiApiKey = '',
   });
 
@@ -21,6 +25,8 @@ class AppSettings {
         'owner_address': ownerAddress,
         'owner_phone': ownerPhone,
         'owner_email': ownerEmail,
+        'owner_bank': ownerBank,
+        'owner_iban': ownerIban,
         'gemini_api_key': geminiApiKey,
       };
 
@@ -30,6 +36,8 @@ class AppSettings {
         ownerAddress: map['owner_address'] ?? '',
         ownerPhone: map['owner_phone'] ?? '',
         ownerEmail: map['owner_email'] ?? '',
+        ownerBank: map['owner_bank'] ?? '',
+        ownerIban: map['owner_iban'] ?? '',
         geminiApiKey: map['gemini_api_key'] ?? '',
       );
 }

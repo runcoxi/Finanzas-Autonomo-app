@@ -15,6 +15,8 @@ class SettingsProvider extends ChangeNotifier {
       ownerAddress: prefs.getString('owner_address') ?? '',
       ownerPhone: prefs.getString('owner_phone') ?? '',
       ownerEmail: prefs.getString('owner_email') ?? '',
+      ownerBank: prefs.getString('owner_bank') ?? 'BBVA',
+      ownerIban: prefs.getString('owner_iban') ?? 'ES76 0182 5297 2302 0172 1273',
       geminiApiKey: prefs.getString('gemini_api_key') ?? '',
     );
     notifyListeners();
@@ -27,6 +29,8 @@ class SettingsProvider extends ChangeNotifier {
     await prefs.setString('owner_address', s.ownerAddress);
     await prefs.setString('owner_phone', s.ownerPhone);
     await prefs.setString('owner_email', s.ownerEmail);
+    await prefs.setString('owner_bank', s.ownerBank);
+    await prefs.setString('owner_iban', s.ownerIban);
     await prefs.setString('gemini_api_key', s.geminiApiKey);
     _settings = s;
     notifyListeners();

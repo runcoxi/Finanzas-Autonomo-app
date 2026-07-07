@@ -3,12 +3,14 @@ class Client {
   final String name;
   final String nif;
   final String address;
+  final String notes;
 
   const Client({
     this.id,
     required this.name,
     this.nif = '',
     this.address = '',
+    this.notes = '',
   });
 
   Map<String, dynamic> toMap() => {
@@ -16,6 +18,7 @@ class Client {
         'name': name,
         'nif': nif,
         'address': address,
+        'notes': notes,
       };
 
   factory Client.fromMap(Map<String, dynamic> map) => Client(
@@ -23,5 +26,6 @@ class Client {
         name: map['name'] as String,
         nif: map['nif'] as String? ?? '',
         address: map['address'] as String? ?? '',
+        notes: map['notes'] as String? ?? '',
       );
 }

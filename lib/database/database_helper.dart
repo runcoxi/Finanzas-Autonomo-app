@@ -22,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, 'finanzas_autonomo.db');
     return openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onConfigure: (db) async => db.execute('PRAGMA foreign_keys = ON'),
@@ -42,6 +42,11 @@ class DatabaseHelper {
           address TEXT
         )
       ''');
+    }
+    if (oldVersion < 4) {
+      await db.execute('ALTER TABLE clients ADD COLUMN notes TEXT');
+      await db.execute(
+          "ALTER TABLE invoices ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'Transferencia'");
     }
   }
 
@@ -76,7 +81,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         nif TEXT,
-        address TEXT
+        address TEXT,
+        notes TEXT
       )
     ''');
 
@@ -91,6 +97,7 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         due_date TEXT,
         status TEXT NOT NULL DEFAULT 'pending',
+        payment_method TEXT NOT NULL DEFAULT 'Transferencia',
         notes TEXT
       )
     ''');
@@ -164,7 +171,8 @@ class DatabaseHelper {
     if (existing.isEmpty) {
       await db.insert('clients', c.toMap()..remove('id'));
     } else {
-      await db.update('clients', {'nif': c.nif, 'address': c.address},
+      await db.update(
+          'clients', {'nif': c.nif, 'address': c.address, 'notes': c.notes},
           where: 'name = ?', whereArgs: [c.name]);
     }
   }

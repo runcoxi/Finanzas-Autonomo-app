@@ -8,8 +8,19 @@ import 'formatters.dart';
 class PdfGenerator {
   static Future<void> shareInvoicePdf(Invoice invoice, AppSettings settings) async {
     final pdf = pw.Document();
-    final font = pw.Font.helvetica();
-    final bold = pw.Font.helveticaBold();
+
+    // Fuente Unicode: la Helvetica que trae el paquete `pdf` no incluye el glifo
+    // del euro (€) y se veía como una "X"/cuadrito en el importe. Noto Sans sí lo
+    // tiene. Si por lo que sea no se puede descargar, volvemos a Helvetica.
+    pw.Font font;
+    pw.Font bold;
+    try {
+      font = await PdfGoogleFonts.notoSansRegular();
+      bold = await PdfGoogleFonts.notoSansBold();
+    } catch (_) {
+      font = pw.Font.helvetica();
+      bold = pw.Font.helveticaBold();
+    }
 
     pdf.addPage(
       pw.Page(
@@ -51,6 +62,7 @@ class PdfGenerator {
                 pw.Text('Fecha: ${formatDate(invoice.date)}', style: text),
                 if (invoice.dueDate != null)
                   pw.Text('Vencimiento: ${formatDate(invoice.dueDate!)}', style: text),
+                pw.Text('Forma de pago: ${invoice.paymentMethod}', style: text),
               ],
             ),
           ],
@@ -160,6 +172,37 @@ class PdfGenerator {
         if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
           pw.Text('Notas:', style: boldSm),
           pw.Text(invoice.notes!, style: text),
+          pw.SizedBox(height: 20),
+        ],
+
+        // Datos de pago (solo si es transferencia y hay cuenta configurada)
+        if (invoice.paymentMethod == 'Transferencia' &&
+            settings.ownerIban.isNotEmpty) ...[
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.all(10),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('INFORMACIÓN DE PAGO', style: header),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Forma de pago: Transferencia bancaria',
+                  style: text,
+                ),
+                if (settings.ownerName.isNotEmpty)
+                  pw.Text('Titular: ${settings.ownerName}', style: text),
+                if (settings.ownerBank.isNotEmpty)
+                  pw.Text('Banco: ${settings.ownerBank}', style: text),
+                pw.Text('IBAN: ${settings.ownerIban}', style: boldSm),
+              ],
+            ),
+          ),
           pw.SizedBox(height: 20),
         ],
 

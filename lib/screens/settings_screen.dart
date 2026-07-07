@@ -19,6 +19,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _addressCtrl;
   late final TextEditingController _phoneCtrl;
   late final TextEditingController _emailCtrl;
+  late final TextEditingController _bankCtrl;
+  late final TextEditingController _ibanCtrl;
   late final TextEditingController _geminiKeyCtrl;
   bool _showApiKey = false;
   DateTime _exportMonth = DateTime(DateTime.now().year, DateTime.now().month);
@@ -33,6 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _addressCtrl = TextEditingController(text: s.ownerAddress);
     _phoneCtrl = TextEditingController(text: s.ownerPhone);
     _emailCtrl = TextEditingController(text: s.ownerEmail);
+    _bankCtrl = TextEditingController(text: s.ownerBank);
+    _ibanCtrl = TextEditingController(text: s.ownerIban);
     _geminiKeyCtrl = TextEditingController(text: s.geminiApiKey);
   }
 
@@ -43,6 +47,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _addressCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
+    _bankCtrl.dispose();
+    _ibanCtrl.dispose();
     _geminiKeyCtrl.dispose();
     super.dispose();
   }
@@ -55,6 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ownerAddress: _addressCtrl.text.trim(),
           ownerPhone: _phoneCtrl.text.trim(),
           ownerEmail: _emailCtrl.text.trim(),
+          ownerBank: _bankCtrl.text.trim(),
+          ownerIban: _ibanCtrl.text.trim(),
           geminiApiKey: _geminiKeyCtrl.text.trim(),
         ));
     if (mounted) {
@@ -162,6 +170,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 prefixIcon: Icon(Icons.phone),
               ),
               keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.account_balance, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Text('Datos bancarios',
+                    style: Theme.of(context).textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Aparecen en las facturas cuando eliges "Transferencia" como forma de pago.',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _bankCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Banco',
+                prefixIcon: Icon(Icons.account_balance_outlined),
+                hintText: 'Ej: Banco Sabadell',
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _ibanCtrl,
+              decoration: const InputDecoration(
+                labelText: 'IBAN / Nº de cuenta',
+                prefixIcon: Icon(Icons.credit_card),
+                hintText: 'ES00 0000 0000 0000 0000 0000',
+              ),
+              textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 24),
             const Divider(),

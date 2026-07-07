@@ -63,6 +63,7 @@ class Invoice {
   final DateTime date;
   final DateTime? dueDate;
   final String status; // 'pending' | 'paid' | 'overdue'
+  final String paymentMethod; // 'Transferencia' | 'Efectivo' | 'Bizum' | 'Otro'
   final String? notes;
   final List<InvoiceItem> items;
 
@@ -76,6 +77,7 @@ class Invoice {
     required this.date,
     this.dueDate,
     this.status = 'pending',
+    this.paymentMethod = 'Transferencia',
     this.notes,
     this.items = const [],
   });
@@ -95,6 +97,7 @@ class Invoice {
         'date': date.toIso8601String(),
         'due_date': dueDate?.toIso8601String(),
         'status': status,
+        'payment_method': paymentMethod,
         'notes': notes,
       };
 
@@ -111,6 +114,7 @@ class Invoice {
             ? DateTime.parse(map['due_date'] as String)
             : null,
         status: map['status'] as String,
+        paymentMethod: map['payment_method'] as String? ?? 'Transferencia',
         notes: map['notes'] as String?,
         items: items,
       );
@@ -125,6 +129,7 @@ class Invoice {
     DateTime? date,
     DateTime? dueDate,
     String? status,
+    String? paymentMethod,
     String? notes,
     List<InvoiceItem>? items,
   }) =>
@@ -138,6 +143,7 @@ class Invoice {
         date: date ?? this.date,
         dueDate: dueDate ?? this.dueDate,
         status: status ?? this.status,
+        paymentMethod: paymentMethod ?? this.paymentMethod,
         notes: notes ?? this.notes,
         items: items ?? this.items,
       );

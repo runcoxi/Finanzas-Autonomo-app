@@ -25,6 +25,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
   double _irpfRate = 15;
   DateTime _date = DateTime.now();
   DateTime? _dueDate;
+  String _paymentMethod = 'Transferencia';
   List<_ItemFormData> _items = [];
   List<Client> _clients = [];
 
@@ -32,6 +33,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
 
   static const _irpfRates = [0.0, 1.0, 7.0, 15.0, 19.0, 21.0];
   static const _vatRates = [0.0, 4.0, 10.0, 21.0];
+  static const _paymentMethods = ['Transferencia', 'Efectivo', 'Bizum', 'Otro'];
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
       _irpfRate = inv.irpfRate;
       _date = inv.date;
       _dueDate = inv.dueDate;
+      _paymentMethod = inv.paymentMethod;
       _items = inv.items
           .map((i) => _ItemFormData(
                 description: i.description,
@@ -125,6 +128,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
       date: _date,
       dueDate: _dueDate,
       status: widget.invoice?.status ?? 'pending',
+      paymentMethod: _paymentMethod,
       notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       items: _items
           .map((i) => InvoiceItem(
@@ -146,6 +150,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
       name: invoice.clientName,
       nif: invoice.clientNif,
       address: invoice.clientAddress,
+      notes: _notesCtrl.text.trim(),
     ));
 
     if (mounted) Navigator.pop(context);
@@ -216,6 +221,18 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                   .toList(),
               onChanged: (v) => setState(() => _irpfRate = v ?? 15),
             ),
+            const SizedBox(height: 12),
+
+            // Forma de pago
+            DropdownButtonFormField<String>(
+              value: _paymentMethod,
+              decoration: const InputDecoration(labelText: 'Forma de pago'),
+              items: _paymentMethods
+                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                  .toList(),
+              onChanged: (v) =>
+                  setState(() => _paymentMethod = v ?? 'Transferencia'),
+            ),
             const SizedBox(height: 20),
 
             // Cliente
@@ -229,9 +246,14 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
               },
               displayStringForOption: (c) => c.name,
               onSelected: (c) {
-                _clientNameCtrl.text = c.name;
-                _clientNifCtrl.text = c.nif;
-                _clientAddressCtrl.text = c.address;
+                setState(() {
+                  _clientNameCtrl.text = c.name;
+                  _clientNifCtrl.text = c.nif;
+                  _clientAddressCtrl.text = c.address;
+                  // Prefijamos la nota guardada del cliente (p. ej. el código
+                  // único por repartidor de Ontime) para no reescribirla.
+                  if (c.notes.isNotEmpty) _notesCtrl.text = c.notes;
+                });
               },
               fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
                 return TextFormField(
